@@ -26,65 +26,34 @@ package jenkins.plugins.publish_over_ssh;
 
 import hudson.model.Describable;
 import hudson.model.Hudson;
-import jenkins.plugins.publish_over.BapPublisher;
-import jenkins.plugins.publish_over_ssh.descriptor.BapSshPublisherDescriptor;
+import jenkins.plugins.publish_over.Credentials;
+import jenkins.plugins.publish_over_ssh.descriptor.BapSshCredentialsDescriptor;
+import jenkins.plugins.publish_over_ssh.descriptor.BapSshProxyDescriptor;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-import java.util.ArrayList;
-
-/**
- * Class required to enable stapler/DBC to bind to correct BPTransfer - BapSshTransfer
- */
-@SuppressWarnings("PMD.LooseCoupling") // serializable
-public class BapSshPublisher extends BapPublisher<BapSshTransfer> implements Describable<BapSshPublisher> {
+public class BapSshProxy extends BapSshProxyInfo implements Describable<BapSshProxy> {
 
     private static final long serialVersionUID = 1L;
-    private BapSshProxy sshProxy;
 
     @DataBoundConstructor
-    public BapSshPublisher(final String configName, final boolean verbose, final ArrayList<BapSshTransfer> transfers,
-                           final boolean useWorkspaceInPromotion, final boolean usePromotionTimestamp, final BapSshRetry sshRetry,
-                           final BapSshPublisherLabel sshLabel, final BapSshCredentials sshCredentials, final BapSshProxy sshProxy) {
-        super(configName, verbose, transfers, useWorkspaceInPromotion, usePromotionTimestamp, sshRetry, sshLabel, sshCredentials);
-        this.sshProxy = sshProxy;
+    public BapSshProxy(final String proxyHostname, final int proxyPort) {
+        super(proxyHostname, proxyPort);
     }
 
-    public final boolean isSftpRequired() {
-        for (BapSshTransfer transfer : getTransfers()) {
-            if (transfer.hasConfiguredSourceFiles()) return true;
-        }
-        return false;
-    }
-
-    public BapSshRetry getSshRetry() {
-        return (BapSshRetry) super.getRetry();
-    }
-
-    public BapSshPublisherLabel getSshLabel() {
-        return (BapSshPublisherLabel) super.getLabel();
-    }
-
-    public BapSshCredentials getSshCredentials() {
-        return (BapSshCredentials) getCredentials();
-    }
-    
-    public BapSshProxy getSshProxy() {
-        return (BapSshProxy) sshProxy;
-    }
-
-    public BapSshPublisherDescriptor getDescriptor() {
-        return Hudson.getInstance().getDescriptorByType(BapSshPublisherDescriptor.class);
+    public BapSshProxyDescriptor getDescriptor() {
+        return Hudson.getInstance().getDescriptorByType(BapSshProxyDescriptor.class);
     }
 
     public boolean equals(final Object that) {
         if (this == that) return true;
         if (that == null || getClass() != that.getClass()) return false;
 
-        return addToEquals(new EqualsBuilder(), (BapSshPublisher) that).isEquals();
+        return addToEquals(new EqualsBuilder(), (BapSshProxy) that).isEquals();
     }
 
     public int hashCode() {

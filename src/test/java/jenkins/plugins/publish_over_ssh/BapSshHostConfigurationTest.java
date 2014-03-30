@@ -32,15 +32,18 @@ import static org.easymock.EasyMock.isA;
 import static org.easymock.EasyMock.isNull;
 import hudson.FilePath;
 import hudson.model.TaskListener;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import jenkins.plugins.publish_over.BPBuildInfo;
 import jenkins.plugins.publish_over.BapPublisherException;
 import jenkins.plugins.publish_over_ssh.helper.BapSshTestHelper;
 import jenkins.plugins.publish_over_ssh.helper.RandomFile;
+
 import org.easymock.classextension.EasyMock;
 import org.easymock.classextension.IMocksControl;
 import org.junit.After;
@@ -55,6 +58,7 @@ import org.jvnet.hudson.test.HudsonTestCase;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Proxy;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
@@ -66,6 +70,8 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
     private static final String TEST_USERNAME = "testUser";
     private static final String TEST_REMOTE_ROOT = "/test/root";
     private static final String TEST_PASSPHRASE = "DEFAULT";
+    private static final String TEST_HOST_PROXY = "test.proxy.host.name";
+    private static final int TEST_PORT_PROXY = 9344;
 
     private static final Logger HOST_CONFIG_LOGGER = Logger.getLogger(BapSshHostConfiguration.class.getCanonicalName());
     private static Level originalLogLevel;
@@ -221,6 +227,24 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
         mockSftp.cd(getHostConfig().getRemoteRootDir());
         assertCreateClient();
     }
+    
+    @Test
+    public void testCreateClientWithProxy() throws Exception {
+    	final BapSshProxyInfo defaultProxyInfo = new BapSshProxyInfo(TEST_HOST_PROXY,TEST_PORT_PROXY);
+        hostConfig = createWithProxyInfo(mockJSch, defaultProxyInfo);
+    	final BapSshCommonConfiguration commonConfiguration = new BapSshCommonConfiguration("Ignore me", null, null, false);
+        getHostConfig().setCommonConfig(commonConfiguration);
+        expect(mockJSch.getSession(getHostConfig().getUsername(), getHostConfig().getHostname(), getHostConfig().getPort())).andReturn(mockSession);
+        mockSession.setPassword(TEST_PASSPHRASE);
+        mockSession.setConfig((Properties) anyObject());
+        mockSession.setProxy((Proxy) anyObject());
+        mockSession.connect(getHostConfig().getTimeout());
+        expect(mockSession.openChannel("sftp")).andReturn(mockSftp);
+        mockSftp.connect(getHostConfig().getTimeout());
+        testHelper.expectDirectoryCheck(getHostConfig().getRemoteRootDir(), true);
+        mockSftp.cd(getHostConfig().getRemoteRootDir());
+        assertCreateClient();
+    }
 
     @Test
     public void testCreateClientFailsIfPwdReturnsRelativePath() throws Exception {
@@ -321,7 +345,7 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
         final BapSshTransfer transfer2 = new BapSshTransfer("", "", "", "", false, false, "pwd", 10000, false, false, false, null);
         final ArrayList<BapSshTransfer> transfers = new ArrayList<BapSshTransfer>();
         transfers.addAll(Arrays.asList(transfer1, transfer2));
-        final BapSshPublisher publisher = new BapSshPublisher(getHostConfig().getName(), false, transfers, false, false, null, null, null);
+        final BapSshPublisher publisher = new BapSshPublisher(getHostConfig().getName(), false, transfers, false, false, null, null, null, null);
         expect(mockJSch.getSession(getHostConfig().getUsername(), getHostConfig().getHostname(), getHostConfig().getPort())).andReturn(mockSession);
         mockSession.setPassword(defaultKeyInfo.getPassphrase());
         mockSession.setConfig((Properties) anyObject());
@@ -361,6 +385,11 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
         config.setOverrideKey(false);
         return config;
     }
+    
+    private BapSshHostConfiguration createWithProxyInfo(final JSch ssh, final BapSshProxyInfo proxyInfo) {
+        final BapSshHostConfiguration config = new BapSshHostConfigurationWithMockJSch(ssh, proxyInfo.getProxyHostname(), proxyInfo.getProxyPort());
+        return config;
+    }
 
     private BapSshHostConfiguration createWithOverrideUsernameAndPassword(final JSch ssh) {
         return new BapSshHostConfigurationWithMockJSch(ssh);
@@ -377,18 +406,22 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
         private final transient JSch ssh;
 
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh) {
-            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "");
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", "", 9322);
         }
 
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String overridePassword, final String overrideKeyPath, final String overrideKey) {
-            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, overridePassword, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, overrideKeyPath, overrideKey);
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, overridePassword, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, overrideKeyPath, overrideKey, "", 9322);
+        }
+        
+        protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String proxyHost, final int proxyPort) {
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", proxyHost, proxyPort);
         }
 
         @SuppressWarnings("PMD.ExcessiveParameterList")
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String name, final String hostname, final String username,
                 final String overridePassword, final String remoteRootDir, final int port, final int timeout, final String overrideKeyPath,
-                final String overrideKey) {
-            super(name, hostname, username, overridePassword, remoteRootDir, port, timeout, true, overrideKeyPath, overrideKey, false);
+                final String overrideKey, final String proxyHostname, final int proxyPort) {
+            super(name, hostname, username, overridePassword, remoteRootDir, port, timeout, true, overrideKeyPath, overrideKey, false, proxyHostname, proxyPort);
             this.ssh = ssh;
         }
 

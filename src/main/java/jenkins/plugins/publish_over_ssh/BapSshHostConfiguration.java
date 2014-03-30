@@ -27,13 +27,16 @@ package jenkins.plugins.publish_over_ssh;
 import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Hudson;
+
 import java.io.IOException;
 import java.util.Properties;
+
 import jenkins.plugins.publish_over.BPBuildInfo;
 import jenkins.plugins.publish_over.BPHostConfiguration;
 import jenkins.plugins.publish_over.BapPublisher;
 import jenkins.plugins.publish_over.BapPublisherException;
 import jenkins.plugins.publish_over_ssh.descriptor.BapSshHostConfigurationDescriptor;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -45,6 +48,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.ProxySOCKS5;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 
@@ -61,6 +65,8 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
     private int timeout;
     private boolean overrideKey;
     private boolean disableExec;
+//    private boolean useProxy;
+    private final BapSshProxyInfo proxyInfo;
     private final BapSshKeyInfo keyInfo;
 
     // CSOFF: ParameterNumberCheck
@@ -68,13 +74,15 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
     @DataBoundConstructor
     public BapSshHostConfiguration(final String name, final String hostname, final String username, final String encryptedPassword,
                                    final String remoteRootDir, final int port, final int timeout, final boolean overrideKey,
-                                   final String keyPath, final String key, final boolean disableExec) {
+                                   final String keyPath, final String key, final boolean disableExec, final String proxyHostname, final int proxyPort) {
         // CSON: ParameterNumberCheck
         super(name, hostname, username, null, remoteRootDir, port);
         this.timeout = timeout;
         this.overrideKey = overrideKey;
         keyInfo = new BapSshKeyInfo(encryptedPassword, key, keyPath);
         this.disableExec = disableExec;
+        proxyInfo = new BapSshProxyInfo(proxyHostname, proxyPort);
+//        this.useProxy = useProxy;
     }
 
     public int getTimeout() { return timeout; }
@@ -96,6 +104,9 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
 
     public boolean isOverrideKey() { return overrideKey; }
     public void setOverrideKey(final boolean overrideKey) { this.overrideKey = overrideKey; }
+    
+//    public boolean isUseProxy() { return useProxy; }
+//    public void setUseProxy(final boolean useProxy) { this.useProxy = useProxy; }
 
     public boolean isDisableExec() { return disableExec; }
     public void setDisableExec(final boolean disableExec) { this.disableExec = disableExec; }
@@ -108,6 +119,12 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
         final BapSshCredentials publisherCredentials = getPublisherOverrideCredentials(buildInfo);
         if (publisherCredentials != null) return publisherCredentials;
         return overrideKey ? keyInfo : getCommonConfig();
+    }
+    
+    private BapSshProxyInfo getEffectiveProxyInfo(final BPBuildInfo buildInfo) {
+        final BapSshProxy publisherProxy = getPublisherOverrideProxy(buildInfo);
+        if (publisherProxy != null) return publisherProxy;
+        return proxyInfo;
     }
 
     @Override
@@ -135,6 +152,10 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
                 sessionProperties.put(CONFIG_KEY_PREFERRED_AUTHENTICATIONS, "keyboard-interactive,password");
             }
             session.setConfig(sessionProperties);
+            if(getEffectiveProxyInfo(buildInfo).useProxy()) {
+            	ProxySOCKS5 proxy = new ProxySOCKS5(proxyInfo.getProxyHostname(), proxyInfo.getProxyPort());
+            	session.setProxy(proxy);
+            }
             connect(buildInfo, session);
             if (connectSftp) setupSftp(buildInfo, bapClient);
             return bapClient;
@@ -244,6 +265,10 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
 
     private static BapSshCredentials getPublisherOverrideCredentials(final BPBuildInfo buildInfo) {
         return (BapSshCredentials) buildInfo.get(BPBuildInfo.OVERRIDE_CREDENTIALS_CONTEXT_KEY);
+    }
+    
+    private static BapSshProxy getPublisherOverrideProxy(final BPBuildInfo buildInfo) {
+        return (BapSshProxy) buildInfo.get("sshProxy");
     }
 
     protected JSch createJSch() {

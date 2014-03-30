@@ -28,66 +28,45 @@ import hudson.Extension;
 import hudson.model.Descriptor;
 import hudson.model.Hudson;
 import hudson.util.FormValidation;
-import jenkins.plugins.publish_over.BPValidators;
+import jenkins.plugins.publish_over.BPBuildInfo;
+import jenkins.plugins.publish_over_ssh.BapSshCredentials;
 import jenkins.plugins.publish_over_ssh.BapSshHostConfiguration;
+import jenkins.plugins.publish_over_ssh.BapSshProxy;
 import jenkins.plugins.publish_over_ssh.BapSshPublisherPlugin;
-import jenkins.plugins.publish_over_ssh.Messages;
+
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
+
+import java.io.IOException;
 
 @Extension
-public class BapSshHostConfigurationDescriptor extends Descriptor<BapSshHostConfiguration> {
+public class BapSshProxyDescriptor extends Descriptor<BapSshProxy> {
 
-    public BapSshHostConfigurationDescriptor() {
-        super(BapSshHostConfiguration.class);
+    public BapSshProxyDescriptor() {
+        super(BapSshProxy.class);
     }
 
     @Override
     public String getDisplayName() {
-        return Messages.global_common_descriptor();
+        return "not seen";
     }
 
-    public int getDefaultPort() {
-        return BapSshHostConfiguration.DEFAULT_PORT;
-    }
-
-    public int getDefaultTimeout() {
-        return BapSshHostConfiguration.DEFAULT_TIMEOUT;
-    }
-
-    public FormValidation doCheckName(@QueryParameter final String value) {
-        return BPValidators.validateName(value);
-    }
-
-    public FormValidation doCheckHostname(@QueryParameter final String value) {
+    public FormValidation doCheckProxyHostname(@QueryParameter final String value) {
         return FormValidation.validateRequired(value);
     }
 
-    public FormValidation doCheckUsername(@QueryParameter final String value) {
-        return FormValidation.validateRequired(value);
-    }
-
-    public FormValidation doCheckPort(@QueryParameter final String value) {
-        return FormValidation.validatePositiveInteger(value);
-    }
-    
     public FormValidation doCheckProxyPort(@QueryParameter final String value) {
-        return FormValidation.validatePositiveInteger(value);
+    	return FormValidation.validatePositiveInteger(value);
     }
 
-    public FormValidation doCheckTimeout(@QueryParameter final String value) {
-        return FormValidation.validateNonNegativeInteger(value);
-    }
-
-    public FormValidation doCheckKeyPath(@QueryParameter final String value) {
-        return BPValidators.validateFileOnMaster(value);
-    }
-
-    public FormValidation doTestConnection(final StaplerRequest request, final StaplerResponse response) {
+    public FormValidation doTestConnection(@QueryParameter final String configName, @QueryParameter final String proxyHostname,
+    									   @QueryParameter final int proxyPort) {
+        final BapSshProxy proxyInfo = new BapSshProxy(proxyHostname,proxyPort);
+        final BPBuildInfo buildInfo = BapSshPublisherPluginDescriptor.createDummyBuildInfo();
+        buildInfo.put("sshProxy", proxyInfo);
         final BapSshPublisherPlugin.Descriptor pluginDescriptor = Hudson.getInstance().getDescriptorByType(
-                BapSshPublisherPlugin.Descriptor.class);
-        return pluginDescriptor.doTestConnection(request, response);
+                                                                                                    BapSshPublisherPlugin.Descriptor.class);
+        final BapSshHostConfiguration hostConfig = pluginDescriptor.getConfiguration(configName);
+        return BapSshPublisherPluginDescriptor.validateConnection(hostConfig, buildInfo);
     }
 
     public jenkins.plugins.publish_over.view_defaults.HostConfiguration.Messages getCommonFieldNames() {
