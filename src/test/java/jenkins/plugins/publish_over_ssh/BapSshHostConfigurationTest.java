@@ -406,22 +406,22 @@ public class BapSshHostConfigurationTest extends HudsonTestCase {
         private final transient JSch ssh;
 
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh) {
-            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", "", 9322);
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", false, "", 9322);
         }
 
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String overridePassword, final String overrideKeyPath, final String overrideKey) {
-            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, overridePassword, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, overrideKeyPath, overrideKey, "", 9322);
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, overridePassword, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, overrideKeyPath, overrideKey, false, "", 9322);
         }
         
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String proxyHost, final int proxyPort) {
-            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", proxyHost, proxyPort);
+            this(ssh, TEST_NAME, TEST_HOSTNAME, TEST_USERNAME, TEST_PASSPHRASE, TEST_REMOTE_ROOT, DEFAULT_PORT, DEFAULT_TIMEOUT, "", "", true, proxyHost, proxyPort);
         }
 
         @SuppressWarnings("PMD.ExcessiveParameterList")
         protected BapSshHostConfigurationWithMockJSch(final JSch ssh, final String name, final String hostname, final String username,
                 final String overridePassword, final String remoteRootDir, final int port, final int timeout, final String overrideKeyPath,
-                final String overrideKey, final String proxyHostname, final int proxyPort) {
-            super(name, hostname, username, overridePassword, remoteRootDir, port, timeout, true, overrideKeyPath, overrideKey, false, proxyHostname, proxyPort);
+                final String overrideKey, final boolean useProxy, final String proxyHostname, final int proxyPort) {
+            super(name, hostname, username, overridePassword, remoteRootDir, port, timeout, true, overrideKeyPath, overrideKey, false, useProxy, proxyHostname, proxyPort);
             this.ssh = ssh;
         }
 

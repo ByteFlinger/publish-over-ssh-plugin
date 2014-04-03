@@ -26,7 +26,10 @@ package jenkins.plugins.publish_over_ssh;
 
 import hudson.model.Describable;
 import hudson.model.Hudson;
+import jenkins.plugins.publish_over.BPBuildInfo;
 import jenkins.plugins.publish_over.BapPublisher;
+import jenkins.plugins.publish_over.BapTransferException;
+import jenkins.plugins.publish_over.Messages;
 import jenkins.plugins.publish_over_ssh.descriptor.BapSshPublisherDescriptor;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
@@ -35,6 +38,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class required to enable stapler/DBC to bind to correct BPTransfer - BapSshTransfer
@@ -79,6 +83,18 @@ public class BapSshPublisher extends BapPublisher<BapSshTransfer> implements Des
     public BapSshPublisherDescriptor getDescriptor() {
         return Hudson.getInstance().getDescriptorByType(BapSshPublisherDescriptor.class);
     }
+    
+    protected HashCodeBuilder addToHashCode(final HashCodeBuilder builder) {
+        return super.addToHashCode(builder).append(sshProxy);
+    }
+    
+    protected EqualsBuilder addToEquals(final EqualsBuilder builder, final BapSshPublisher that) {
+        return super.addToEquals(builder, that).append(sshProxy, that.getSshProxy());
+    }
+    
+    protected ToStringBuilder addToToString(final ToStringBuilder builder) {
+        return super.addToToString(builder).append("sshProxy", sshProxy);
+    }
 
     public boolean equals(final Object that) {
         if (this == that) return true;
@@ -94,5 +110,4 @@ public class BapSshPublisher extends BapPublisher<BapSshTransfer> implements Des
     public String toString() {
         return addToToString(new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)).toString();
     }
-
 }

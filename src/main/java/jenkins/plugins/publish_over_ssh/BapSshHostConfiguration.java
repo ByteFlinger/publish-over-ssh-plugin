@@ -65,16 +65,18 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
     private int timeout;
     private boolean overrideKey;
     private boolean disableExec;
-//    private boolean useProxy;
+    private boolean useProxy;
     private final BapSshProxyInfo proxyInfo;
     private final BapSshKeyInfo keyInfo;
+    private final String proxyHostname;
+    private final int proxyPort;
 
     // CSOFF: ParameterNumberCheck
     @SuppressWarnings("PMD.ExcessiveParameterList") // DBC for you!
     @DataBoundConstructor
     public BapSshHostConfiguration(final String name, final String hostname, final String username, final String encryptedPassword,
                                    final String remoteRootDir, final int port, final int timeout, final boolean overrideKey,
-                                   final String keyPath, final String key, final boolean disableExec, final String proxyHostname, final int proxyPort) {
+                                   final String keyPath, final String key, final boolean disableExec, final boolean useProxy, final String proxyHostname, final int proxyPort) {
         // CSON: ParameterNumberCheck
         super(name, hostname, username, null, remoteRootDir, port);
         this.timeout = timeout;
@@ -82,7 +84,9 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
         keyInfo = new BapSshKeyInfo(encryptedPassword, key, keyPath);
         this.disableExec = disableExec;
         proxyInfo = new BapSshProxyInfo(proxyHostname, proxyPort);
-//        this.useProxy = useProxy;
+        this.useProxy = useProxy;
+        this.proxyHostname = proxyHostname;
+        this.proxyPort = proxyPort;
     }
 
     public int getTimeout() { return timeout; }
@@ -105,10 +109,18 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
     public boolean isOverrideKey() { return overrideKey; }
     public void setOverrideKey(final boolean overrideKey) { this.overrideKey = overrideKey; }
     
-//    public boolean isUseProxy() { return useProxy; }
-//    public void setUseProxy(final boolean useProxy) { this.useProxy = useProxy; }
+    public boolean isUseProxy() { return useProxy; }
+    public void setUseProxy(final boolean useProxy) { this.useProxy = useProxy; }
 
-    public boolean isDisableExec() { return disableExec; }
+    public String getProxyHostname() {
+		return proxyHostname;
+	}
+
+	public int getProxyPort() {
+		return proxyPort;
+	}
+
+	public boolean isDisableExec() { return disableExec; }
     public void setDisableExec(final boolean disableExec) { this.disableExec = disableExec; }
 
     public boolean isEffectiveDisableExec() {
@@ -152,8 +164,10 @@ public class BapSshHostConfiguration extends BPHostConfiguration<BapSshClient, B
                 sessionProperties.put(CONFIG_KEY_PREFERRED_AUTHENTICATIONS, "keyboard-interactive,password");
             }
             session.setConfig(sessionProperties);
-            if(getEffectiveProxyInfo(buildInfo).useProxy()) {
-            	ProxySOCKS5 proxy = new ProxySOCKS5(proxyInfo.getProxyHostname(), proxyInfo.getProxyPort());
+            
+            BapSshProxyInfo effectiveProxy = getEffectiveProxyInfo(buildInfo);
+            if(effectiveProxy.useProxy()) {
+            	ProxySOCKS5 proxy = new ProxySOCKS5(effectiveProxy.getProxyHostname(), effectiveProxy.getProxyPort());
             	session.setProxy(proxy);
             }
             connect(buildInfo, session);

@@ -58,7 +58,7 @@ public class LegacyConfigurationTest extends HudsonTestCase {
         final List<BapSshHostConfiguration> configurations = getPublisherPluginDescriptor().getHostConfigurations();
         assertEquals(1, configurations.size());
         final BapSshHostConfiguration expected = new BapSshHostConfiguration("default", "hostname", "username", "password", "",
-                                                                       DEFAULT_PORT, DEFAULT_TIMEOUT, true, "", "", false,"",9322);
+                                                                       DEFAULT_PORT, DEFAULT_TIMEOUT, true, "", "", false, false, "",9322);
         expected.setCommonConfig(new BapSshCommonConfiguration("", "", "", false));
         assertEquals(expected, configurations.get(0));
 
@@ -116,13 +116,13 @@ public class LegacyConfigurationTest extends HudsonTestCase {
         final int configDTimeout = 10000;
         final BapSshHostConfiguration[] expectedConfig = new BapSshHostConfiguration[] {
                 new BapSshHostConfiguration(configName('a'), hostname('a'), "username.a", "password.a", "remoteDirectory.a",
-                        DEFAULT_PORT, DEFAULT_TIMEOUT, false, "", "", false,"",9322),
+                        DEFAULT_PORT, DEFAULT_TIMEOUT, false, "", "", false, false, "",9322),
                 new BapSshHostConfiguration(configName('b'), hostname('b'), "username.b", "", "",
-                        DEFAULT_PORT, DEFAULT_TIMEOUT, true, "/an/unencrypted/key", "", false,"",9322),
+                        DEFAULT_PORT, DEFAULT_TIMEOUT, true, "/an/unencrypted/key", "", false, false, "",9322),
                 new BapSshHostConfiguration(configName('c'), hostname('c'), "username.c", "", "",
-                        DEFAULT_PORT, DEFAULT_TIMEOUT, true, "", KEY_2, false,"",9322),
+                        DEFAULT_PORT, DEFAULT_TIMEOUT, true, "", KEY_2, false, false, "",9322),
                 new BapSshHostConfiguration(configName('d'), hostname('d'), "username.d", "passphrase", "remoteDirectory.d",
-                        configDPort, configDTimeout, true, "path/to/key", KEY_2, false,"",9322)
+                        configDPort, configDTimeout, true, "path/to/key", KEY_2, false, false,"",9322)
         };
         final BapSshCommonConfiguration common = new BapSshCommonConfiguration("hello", COMMON_KEY, "/this/will/be/ignored", false);
         for (BapSshHostConfiguration hostConfig : expectedConfig) {

@@ -72,6 +72,10 @@ public class BapSshHostConfigurationDescriptor extends Descriptor<BapSshHostConf
         return FormValidation.validatePositiveInteger(value);
     }
     
+    public FormValidation doCheckProxyHostname(@QueryParameter final String value) {
+        return FormValidation.validateRequired(value);
+    }
+    
     public FormValidation doCheckProxyPort(@QueryParameter final String value) {
         return FormValidation.validatePositiveInteger(value);
     }

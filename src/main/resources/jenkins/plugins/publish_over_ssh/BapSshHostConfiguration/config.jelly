@@ -55,7 +55,7 @@
             </f:entry>
         </f:optionalBlock>
         
-        <f:optionalBlock title="${%use.proxy}" field="useProxy">
+        <f:optionalBlock inline="true" title="${%use.proxy}" field="useProxy">
             <f:entry title="${%proxyHostname}" field="proxyHostname">
         		<f:textbox/>
     		</f:entry>

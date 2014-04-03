@@ -47,7 +47,7 @@ public class BapSshProxyInfo implements Serializable {
         this.proxyPort = proxyPort;
     }
 
-    protected String getProxyHostname() { return proxyHostname; }
+    public String getProxyHostname() { return proxyHostname; }
     public void setProxyHostname(final String proxyHostname) { this.proxyHostname = proxyHostname; }
 
     public int getProxyPort() { return proxyPort; }

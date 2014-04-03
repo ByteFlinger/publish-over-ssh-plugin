@@ -69,7 +69,7 @@ public class IntegrationTest extends HudsonTestCase {
         final int port = 28;
         final int timeout = 3000;
         final BapSshHostConfiguration testHostConfig = new BapSshHostConfiguration("testConfig", "testHostname", "testUsername", "",
-                                                                             "/testRemoteRoot", port, timeout, false, "", "", false,"",9322) {
+                                                                             "/testRemoteRoot", port, timeout, false, "", "", false, false, "",9322) {
             @Override
             public JSch createJSch() {
                 return mockJsch;
